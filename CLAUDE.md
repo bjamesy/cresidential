@@ -65,58 +65,53 @@ Normalize transactions for matching.
 Input:
 
 * LeaseRecord
-* TransactionHistory
+* TransactionHistory (one or more bank accounts, scoped to lease period only)
 
-Determine:
+Matching logic:
 
-* Expected payment events
-* Matching payments
-* Missing payments
-* Late payments
-* Partial payments
+* Match on amount + due date proximity
+* Match window = 1 month (from one due date to the next)
+* Amounts shown as-is — no interpretation of partial vs. full payment
+* Recipient identifier used as secondary signal; system detects automatically, no tenant input
+* Low-confidence matches → automated resolution → manual fallback
+* Tenant does not resolve matches
+* Duplicate match across accounts → highest confidence wins, duplicate flagged
+* Final month payment expected unless double-rent prepayment detected before lease start (system-detected)
 
----
+Output per payment period:
 
-### 4. Verification Engine
+* due_date
+* matched_transaction (date, amount) or null
+* status: verified | unverified | gap
 
-Generate:
-
-VerificationSummary
-
-including:
-
-* Expected payments
-* Verified payments
-* Missing payments
-* Verification confidence
+No lateness determination — system shows due date and payment date; prospective landlord interprets.
 
 ---
 
-### 5. Report Generation Module
+### 4. Report Generation Module
 
-Generate:
+Generate RentalVerificationReport as a single chronological timeline interleaving:
 
-RentalVerificationReport
+* Expected due dates (from LeaseRecord)
+* Observed payments (from matched transactions)
 
-containing:
+Prospective landlord reads the relationship between the two — system does not interpret it.
 
-### Lease Verification
+Report sections:
 
-* Address
+**Lease Verification**
+* Property address
 * Lease period
 * Monthly rent
-* Due date
+* Due day
 
-### Payment Verification
+**Payment Timeline**
+* Chronological interleaved list of due dates and matched payments
+* Gaps shown where two due dates occur with no intervening match
+* Payment amounts shown as-is
 
-* Expected cycles
-* Verified cycles
-* Missing cycles
-* Consistency metrics
-
-### Landlord Verification
-
-* Verified tenancy
+**Landlord Verification**
+* Confirmed tenancy
 * Good standing status
 
 ---

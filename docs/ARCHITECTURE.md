@@ -95,24 +95,43 @@ Matches observed transactions against expected lease obligations.
 Inputs:
 
 * LeaseRecord
-* TransactionHistory
+* TransactionHistory (one or more bank accounts, scoped to lease period only)
 
-Outputs:
+Matching rules:
 
-* Verified payments
-* Missing expected payments
-* Late payments
-* Unmatched payments
+* Primary signal: amount proximity to expected rent + due date proximity
+* Match window: 1 month (due date N to due date N+1)
+* Secondary signal: recipient identifier (system-detected, not tenant-provided)
+* Low-confidence matches → automated resolution → manual fallback if unresolved
+* Tenant does not participate in match resolution
+* If duplicate match found across accounts → highest confidence match wins, duplicate flagged
+* Transactions outside the lease period are ignored
+
+Final month rule:
+* Final month payment expected unless a double-rent payment is detected before lease start
+* System detects prepayment automatically — no landlord input required
+
+Outputs per payment period:
+
+* due_date
+* matched_transaction (date, amount) or null
+* status: verified | unverified | gap
+
+No lateness classification — system reports due date and payment date only.
 
 ---
 
 ### 6. Report Generation Layer
 
-Produces:
+Produces a single chronological timeline interleaving expected due dates and observed payments.
 
-* Lease summary
-* Payment verification summary
-* Landlord verification summary
+Sections:
+
+* Lease Verification (property, period, rent, due day)
+* Payment Timeline (due dates + matched payments interleaved; gaps shown, not interpreted)
+* Landlord Verification (confirmed tenancy, good standing)
+
+The system presents facts. The prospective landlord interprets them.
 
 ---
 
@@ -181,17 +200,24 @@ A user may hold both. Reports belong to a `LandlordTenantRelationship`, not to e
 ### PaymentVerification
 
 * expected_payment_date
-* matched_transaction_id
-* status (verified | missing | late | partial)
+* matched_transaction_id (nullable)
+* matched_amount (nullable)
+* status (verified | unverified | gap)
 
 ### RentalVerificationReport
 
 * id
 * relationship_id
 * lease_record_id
-* verification_summary
 * generated_at
 * superseded_by (report_id, nullable — set when regenerated after correction)
+
+Report lifecycle:
+* Report and its history persist independently of the relationship
+* Each relationship has its own report history
+* A report request is always scoped to a specific landlord–tenant relationship
+* On LeaseRecord correction approval, report is regenerated within the relationship's history
+* Original report is retained (via superseded_by chain) for audit
 
 ---
 
