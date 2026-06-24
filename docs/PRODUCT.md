@@ -1,56 +1,149 @@
-# Rental History Evidence Report — Product Spec (MVP)
+# Rental Verification Report — Product Spec
 
 ## Overview
 
-A tool that helps renters generate a **bank-verified rental history report** to support rental applications.
+A system that transforms traditional landlord references into structured tenancy verification reports.
 
-This product does NOT replace credit checks or landlord screening systems. It is a **supplementary evidence artifact** for applicants who want to demonstrate rental reliability using transaction history.
+Instead of asking a previous landlord for a subjective reference, renters invite previous landlords to verify objective tenancy details. The renter may then connect their bank accounts via Plaid to verify payment behavior against the confirmed lease information.
 
----
+The result is a portable rental verification report that combines:
 
-## Core Use Case
-
-This product is for renters who:
-
-- have weak or thin credit history
-- lack strong traditional documentation
-- are confident in their rental reliability
-- want to strengthen a rental application with behavioral proof
+* Landlord-confirmed lease information
+* Bank-verified payment history
+* Structured tenancy records
 
 ---
 
-## Primary Value Proposition
+## Problem
 
-> Turn historical bank transactions into a structured, shareable rental history report.
+Traditional landlord references are weak signals.
+
+Landlords frequently report that:
+
+* References are overwhelmingly positive
+* References are difficult to verify
+* Information is inconsistent across landlords
+* Valuable tenant history is not portable
+
+A reliable tenant receives little benefit from years of good rental behavior.
 
 ---
 
-## Output
+## Core Value Proposition
 
-A renter-owned report containing:
+> Replace subjective landlord references with structured tenancy verification and payment validation.
 
-- Confirmed rent payment streams (tenant-verified from bank data)
-- Payment history timeline (confirmed payments only)
-- Coverage period (spans full detected stream)
-- Gaps in detected payment cadence (always shown — not suppressible by tenant)
-- User annotations (clearly separated from detected data)
-- Shareable link + optional PDF export
+---
 
-Sharing constraint:
-> A stream must be fully reviewed before sharing. If review is incomplete, the report discloses this.
+## Primary User
+
+Renters who:
+
+* Have a strong rental history
+* Want to strengthen a rental application
+* Want a portable record of prior tenancy
+
+---
+
+## How It Works
+
+### Step 1
+
+Tenant provides previous landlord contact information to the prospective landlord.
+
+### Step 2
+
+**Prospective landlord** sends the verification link to the previous landlord.
+
+Previous landlord confirms:
+
+* Tenant identity
+* Property address
+* Lease start date
+* Lease end date
+* Monthly rent amount
+* Rent due day
+* Good standing status
+
+Response is locked on submission. Corrections require a manual review request to our team.
+
+### Step 3
+
+Tenant connects bank accounts via Plaid.
+
+### Step 4
+
+System verifies observed payments against expected lease obligations from the confirmed lease record.
+
+### Step 5
+
+System generates the Rental Verification Report, scoped to the prospective landlord–tenant relationship.
+
+---
+
+## Account Model
+
+Two distinct account types:
+
+**Tenant account**
+* Request verification reports
+* Connect bank accounts via Plaid
+* Share reports with prospective landlords
+
+**Landlord account**
+* Receive and send verification requests
+* Verify tenancy details for current and former tenants
+* View reports for their own applicants
+
+A user may hold both account types. Reports belong to the landlord–tenant relationship, not to either party individually. A relationship only persists if both parties have accounts. One-time flows (no account) are ephemeral — the report is consumed and not retained.
+
+---
+
+## Corrections
+
+If a previous landlord submits incorrect lease details:
+
+* They submit a correction request
+* Our team reviews manually
+* Prospective landlord is notified that a correction is pending
+* If approved, the report is regenerated from the corrected lease record
+* The original report is preserved in our records for audit purposes
+
+---
+
+## Report Contents
+
+### Lease Verification
+
+* Property
+* Lease period
+* Monthly rent
+* Due day
+
+### Payment Verification
+
+* Expected payment cycles
+* Verified payment cycles
+* Missing payment cycles
+* Payment consistency metrics
+
+### Landlord Verification
+
+* Confirmation of tenancy
+* Good standing status
 
 ---
 
 ## Non-Goals
 
-- No credit scoring system
-- No landlord network
-- No rental marketplace
-- No authoritative lease verification
-- No attempt to define legal tenancy truth
+* Tenant scoring
+* Social reputation systems
+* Credit replacement
+* Public reputation profiles
+* Lease inference from transactions alone
 
 ---
 
 ## Key Principle
 
-> The system does not assert legal truth. It summarizes financial behavior related to rent-like payments.
+> Lease facts come from the landlord. Payment verification comes from bank data.

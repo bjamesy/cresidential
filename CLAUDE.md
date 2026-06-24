@@ -1,90 +1,152 @@
-# Rental Evidence Report MVP — Claude Build Spec
+# Rental Verification Report — Claude Implementation Spec
 
 ## Objective
 
-Build a system that extracts and summarizes rent-like financial behavior from bank transaction data and allows user confirmation to produce a rental evidence report.
+Build a platform that converts traditional landlord references into structured tenancy verification reports.
 
-This is NOT a scoring system or truth system.
+The system combines:
 
-It is a **structured financial behavior summary tool for rental applications**.
+* Landlord-confirmed lease information
+* Plaid transaction data
+* Payment verification logic
 
----
-
-## Core Constraint
-
-Do NOT build:
-- credit scoring
-- landlord verification network
-- legal lease validation
-- predictive risk models for eviction or default
-- authoritative “on-time rent truth”
-
-Only build:
-> behavioral summarization of bank transaction data
+to produce portable rental verification reports.
 
 ---
 
-## System Modules
+## Core Design Principle
 
-### 1. Plaid Integration Module
+Do not infer lease facts from bank transactions when a landlord verification exists.
 
-- Connect bank accounts
-- Retrieve transaction history
-- Normalize transaction data
+Use landlord-confirmed lease records as the authoritative source of expected obligations.
 
----
-
-### 2. Recurring Detection Module
-
-Detect candidate rent streams using:
-
-- recurrence cadence detection
-- amount consistency analysis
-- streak length (minimum 3 occurrences)
-- clustering by description similarity
-
-Output:
-- recurring payment candidates with confidence scores
+Use Plaid data to verify performance against those obligations.
 
 ---
 
-### 3. User Confirmation Module
+## Functional Modules
 
-User may:
-- confirm rent stream
-- reject candidate
-- merge multiple streams
-- annotate missing or unusual payments
-- add contextual notes (non-authoritative)
+### 1. Landlord Verification Module
+
+The **prospective landlord** sends a verification link to the **previous landlord**.
+
+Previous landlord submits:
+
+* Tenant identity
+* Property address
+* Lease dates
+* Monthly rent
+* Rent due day
+* Good standing status
 
 Constraints:
-> User input is annotation only, not structural override.
-> User cannot influence timing metrics or cadence inference.
-> A stream must be fully reviewed before the report can be shared. If review is incomplete, the report must clearly disclose this.
+* Response is locked on submission
+* Corrections require a manual review request; our team reviews and approves
+* Prospective landlord is notified when a correction request is pending
+* On correction approval, report is regenerated; original is preserved for audit
+
+Output: LeaseRecord (immutable after submission)
 
 ---
 
-### 4. Rental Evidence Report Generator
+### 2. Plaid Integration Module
 
-Generate structured output:
+Retrieve:
 
-```json
-{
-  "summary": {
-    "detected_rent_streams": [],
-    "total_payments": 0,
-    "coverage_period": "",
-    "consistency_score": null
-  },
-  "timeline": [],
-  "gaps": [],
-  "annotations": []
-}
-```
+* Transaction history
+* Account information
 
-Coverage and gap rules:
-- `coverage_period` spans the full detected stream, not just confirmed payments
-- `gaps` = breaks in detected payment cadence (not missed calendar months)
-- Cadence is computed from the full detected stream and is immutable once confirmed
-- Report shows only tenant-confirmed payments; unconfirmed detections do not appear
-- Gaps always appear in the report regardless of tenant annotations
+Normalize transactions for matching.
+
+---
+
+### 3. Payment Matching Engine
+
+Input:
+
+* LeaseRecord
+* TransactionHistory
+
+Determine:
+
+* Expected payment events
+* Matching payments
+* Missing payments
+* Late payments
+* Partial payments
+
+---
+
+### 4. Verification Engine
+
+Generate:
+
+VerificationSummary
+
+including:
+
+* Expected payments
+* Verified payments
+* Missing payments
+* Verification confidence
+
+---
+
+### 5. Report Generation Module
+
+Generate:
+
+RentalVerificationReport
+
+containing:
+
+### Lease Verification
+
+* Address
+* Lease period
+* Monthly rent
+* Due date
+
+### Payment Verification
+
+* Expected cycles
+* Verified cycles
+* Missing cycles
+* Consistency metrics
+
+### Landlord Verification
+
+* Verified tenancy
+* Good standing status
+
+---
+
+## Report Philosophy
+
+The report is not a reputation score.
+
+The report is a structured summary of:
+
+* Verified tenancy
+* Verified payment behavior
+
+---
+
+## Success Criteria
+
+* Landlord can complete verification in under 2 minutes
+* Tenant can generate report in under 10 minutes
+* Lease obligations become machine-readable
+* Payment verification can be performed without manual statement review
+
+---
+
+## Trust Model
+
+Source of Truth Hierarchy:
+
+1. Landlord-confirmed lease record
+2. Bank transaction data
+3. Tenant-provided information
+
+Tenant-provided information may assist onboarding but never overrides landlord-confirmed lease data.

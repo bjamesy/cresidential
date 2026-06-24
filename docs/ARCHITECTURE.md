@@ -1,97 +1,108 @@
-# Rental Evidence Report System — Architecture
+# Rental Verification Report — Architecture
 
 ## System Overview
 
-The system extracts and summarizes **rent-like financial behavior** from bank transaction data using Plaid, then allows user verification to produce a structured rental history report.
+The platform combines:
+
+1. Landlord-provided lease data
+2. Plaid transaction data
+3. Verification logic
+
+to produce structured rental verification reports.
 
 ---
 
 ## High-Level Flow
 
-Plaid Bank Data
+Tenant provides previous landlord contact info to prospective landlord
 ↓
-Transaction Ingestion Layer
+Prospective landlord sends verification link to previous landlord
 ↓
-Recurring Payment Detection Engine
+Previous landlord submits lease details → LeaseRecord (locked on submission)
 ↓
-Rent Stream Candidate Generation
+Tenant connects Plaid bank account
 ↓
-User Confirmation & Annotation Layer
+Payment Matching Engine (transactions vs. LeaseRecord obligations)
 ↓
-Rental Evidence Report Generator
-
+Rental Verification Report (scoped to prospective landlord–tenant relationship)
 
 ---
 
 ## Core Components
 
-### 1. Bank Data Layer (Plaid)
+### 1. Tenant Application Layer
 
-- Connect user bank accounts
-- Retrieve transaction history (24–60 months)
-- Normalize transaction data
+Responsibilities:
 
----
-
-### 2. Transaction Processing Layer
-
-Standardize:
-- date
-- amount
-- description
-
-No semantic assumptions beyond normalization.
+* Collect landlord contact information
+* Manage report generation requests
+* Manage sharing permissions
 
 ---
 
-### 3. Recurring Detection Engine (Heuristic v1)
+### 2. Landlord Verification Layer
 
-Detect recurring outflows using:
+Responsibilities:
 
-- cadence detection (monthly/biweekly patterns)
-- amount stability thresholds
-- recurrence streak length
-- description similarity clustering
+* Verify tenancy
+* Provide lease metadata
+* Confirm good standing status
 
-Output:
-- candidate recurring payment streams with inferred cadence
+Required fields:
 
-Cadence rules:
-- Cadence is computed from the full detected stream
-- Cadence becomes immutable once the tenant confirms the stream
-- Tenant cannot influence cadence inference at any point
-
----
-
-### 4. Rent Stream Identification Layer
-
-System proposes:
-- “likely rent streams”
-
-NOT definitive classification.
-
-User confirms:
-- “this is rent”
-- or rejects/adjusts stream
-
-Sharing constraint:
-- A stream must be fully reviewed before the report can be shared
-- If review is incomplete, the report discloses this explicitly
+* Tenant name
+* Property address
+* Lease start date
+* Lease end date
+* Monthly rent amount
+* Due day
+* Current or former tenancy status
 
 ---
 
-### 5. User Annotation Layer
+### 3. Lease Record Service
 
-Users may:
-- label rent streams
-- merge split payments
-- correct misclassified transactions
-- annotate gaps (context only, non-authoritative)
+Creates canonical lease records.
 
-Constraints:
-> User annotations do not override detected financial events.
-> User cannot alter timing metrics, cadence, or coverage period.
-> Unconfirmed payments do not appear in the shared report, but their absence creates gaps.
+Example:
+
+LeaseRecord
+
+* lease_start
+* lease_end
+* monthly_rent
+* due_day
+* landlord_verification_timestamp
+
+This becomes the source of truth for expected payment obligations.
+
+---
+
+### 4. Plaid Integration Layer
+
+Responsibilities:
+
+* Connect bank accounts
+* Retrieve transaction history
+* Normalize transaction data
+
+---
+
+### 5. Payment Matching Engine
+
+Matches observed transactions against expected lease obligations.
+
+Inputs:
+
+* LeaseRecord
+* TransactionHistory
+
+Outputs:
+
+* Verified payments
+* Missing expected payments
+* Late payments
+* Unmatched payments
 
 ---
 
@@ -99,28 +110,95 @@ Constraints:
 
 Produces:
 
-- timeline of confirmed rent-like payments
-- coverage period (spans full detected stream, not just confirmed subset)
-- gaps (breaks in detected cadence — always shown, not suppressible)
-- user annotations (clearly separated from detected data)
-
-Gap definition:
-- A gap is triggered by a break in the detected payment cadence
-- Calendar-month gaps are NOT used — cadence-break gaps are
+* Lease summary
+* Payment verification summary
+* Landlord verification summary
 
 ---
 
-## Data Model (Core Entities)
+## Account Model
 
-- User
-- BankConnection
-- Transaction
-- RecurringStreamCandidate
-- ConfirmedRentStream
-- RentalEvidenceReport
+Two account types:
+
+**TenantAccount** — requests reports, connects Plaid
+**LandlordAccount** — sends verification requests, verifies tenancy, views applicant reports
+
+A user may hold both. Reports belong to a `LandlordTenantRelationship`, not to either party alone. A relationship only exists if both parties have accounts. One-time (no-account) flows are ephemeral.
 
 ---
 
-## Key Design Constraint
+## Data Model
 
-> The system only asserts what is directly observed in bank data. All interpretation is probabilistic and explicitly labeled.
+### User
+
+* id
+* email
+* account_type (tenant | landlord | both)
+
+### LandlordTenantRelationship
+
+* id
+* landlord_account_id
+* tenant_account_id
+* status
+
+### LandlordVerificationRequest
+
+* id
+* relationship_id
+* previous_landlord_email
+* sent_by (prospective_landlord_account_id)
+* status
+
+### LeaseRecord
+
+* id
+* verification_request_id
+* property_address
+* lease_start
+* lease_end
+* monthly_rent
+* due_day
+* submitted_at
+* locked (bool)
+
+### LeaseRecordCorrection
+
+* id
+* lease_record_id
+* requested_at
+* reviewed_at
+* status
+* original_snapshot (preserved for audit)
+
+### Transaction
+
+* id
+* date
+* amount
+* description
+
+### PaymentVerification
+
+* expected_payment_date
+* matched_transaction_id
+* status (verified | missing | late | partial)
+
+### RentalVerificationReport
+
+* id
+* relationship_id
+* lease_record_id
+* verification_summary
+* generated_at
+* superseded_by (report_id, nullable — set when regenerated after correction)
+
+---
+
+## Trust Model
+
+Landlord supplies lease obligations.
+
+Bank transactions verify payment behavior.
+
+The system never infers lease terms from transaction data when verified lease information is available.
