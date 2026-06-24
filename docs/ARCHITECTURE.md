@@ -82,9 +82,17 @@ This becomes the source of truth for expected payment obligations.
 
 Responsibilities:
 
-* Connect bank accounts
-* Retrieve transaction history
+* Connect bank accounts one at a time
+* Fetch transaction history once per account and store it
 * Normalize transaction data
+
+Stored transaction data is used for all future report generations and regenerations — no re-fetching from Plaid after initial connection.
+
+Report access:
+
+* Accessible to the landlord account that initiated the request only
+* Tenant does not have access to the generated report
+* Report access is locked to the initiating account
 
 ---
 
@@ -143,6 +151,8 @@ Two account types:
 **LandlordAccount** — sends verification requests, verifies tenancy, views applicant reports
 
 A user may hold both. Reports belong to a `LandlordTenantRelationship`, not to either party alone. A relationship only exists if both parties have accounts. One-time (no-account) flows are ephemeral.
+
+Account deletion: accounts are deactivated with a flag, not deleted. Associated reports and relationships are retained but access is revoked.
 
 ---
 
