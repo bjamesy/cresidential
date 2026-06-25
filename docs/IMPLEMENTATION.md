@@ -208,3 +208,12 @@ idle → connecting → analyzing → results | error
 - Access token storage is in-memory only — server restart clears all sessions (acceptable for MVP)
 - No authentication in MVP — endpoints are open
 - CORS configured for `localhost:5173` (Vite default) in development
+
+## Known Security Gaps
+
+**session_id does not provide meaningful access control.**
+The session_id protects the Plaid access token from being exposed in the browser, but any caller who obtains a valid session_id can call `/transactions/analyze` and retrieve the associated transaction data. Within this system, a session_id is functionally equivalent to the access token it represents — only Plaid itself is protected.
+
+The correct fix is user authentication: access tokens are stored against authenticated user records, and all endpoints require a verified session. This eliminates the need for the session_id indirection entirely.
+
+This gap is accepted for the MVP (sandbox, single-user, no real financial data). It must be resolved before any production deployment.
