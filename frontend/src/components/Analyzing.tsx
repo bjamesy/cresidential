@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { startAnalysis, pollJob, JobResult } from '../api/client'
+import { startAnalysis, pollJob } from '../api/client'
+import type { JobResult } from '../api/client'
 
 type Props = {
   sessionId: string

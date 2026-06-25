@@ -1,4 +1,4 @@
-import { RentCandidate } from '../api/client'
+import type { RentCandidate } from '../api/client'
 
 type Props = {
   period: { start: string; end: string }

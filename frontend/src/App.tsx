@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import ConnectBank from './components/ConnectBank'
 import Analyzing from './components/Analyzing'
 import CandidateList from './components/CandidateList'
-import { JobResult } from './api/client'
+import type { JobResult } from './api/client'
 
 type State =
   | { step: 'idle' }
