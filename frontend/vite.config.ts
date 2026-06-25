@@ -4,10 +4,11 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    host: true,
     proxy: {
-      '/plaid': 'http://localhost:8000',
-      '/transactions': 'http://localhost:8000',
-      '/jobs': 'http://localhost:8000',
+      '/plaid': process.env.BACKEND_URL ?? 'http://localhost:8000',
+      '/transactions': process.env.BACKEND_URL ?? 'http://localhost:8000',
+      '/jobs': process.env.BACKEND_URL ?? 'http://localhost:8000',
     },
   },
 })
