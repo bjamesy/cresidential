@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import plaid
@@ -17,7 +18,6 @@ router = APIRouter()
 def get_plaid_client():
     env_map = {
         "sandbox": plaid.Environment.Sandbox,
-        "development": plaid.Environment.Development,
         "production": plaid.Environment.Production,
     }
     configuration = plaid.Configuration(
@@ -37,7 +37,11 @@ def create_link_token():
     try:
         response = client.link_token_create(
             LinkTokenCreateRequest(
-                user=LinkTokenCreateRequestUser(client_user_id="mvp-user"),
+                user=LinkTokenCreateRequestUser(
+                    client_user_id="mvp-user",
+                    phone_number="+14155550128",
+                    phone_number_verified_time=datetime(2024, 1, 1, tzinfo=timezone.utc),
+                ),
                 client_name="Rental Verification",
                 products=[Products("transactions")],
                 country_codes=[CountryCode("US")],

@@ -1,15 +1,15 @@
 from datetime import date, timedelta
 import plaid
 from plaid.api import plaid_api
-from plaid.model.transactions_get_request import TransactionsGetRequest
-from plaid.model.transactions_get_request_options import TransactionsGetRequestOptions
+from plaid.model.transactions_sync_request import TransactionsSyncRequest
 from app.config import PLAID_CLIENT_ID, PLAID_SANDBOX_SECRET_KEY, PLAID_ENV
+
+TWO_YEARS_AGO = date.today() - timedelta(days=365 * 2)
 
 
 def get_plaid_client():
     env_map = {
         "sandbox": plaid.Environment.Sandbox,
-        "development": plaid.Environment.Development,
         "production": plaid.Environment.Production,
     }
     configuration = plaid.Configuration(
@@ -21,33 +21,29 @@ def get_plaid_client():
 
 def fetch_transactions(access_token: str) -> list[dict]:
     client = get_plaid_client()
-    end_date = date.today()
-    start_date = end_date - timedelta(days=365 * 2)
-
     all_transactions = []
-    offset = 0
+    cursor = None
 
     while True:
-        response = client.transactions_get(
-            TransactionsGetRequest(
-                access_token=access_token,
-                start_date=start_date,
-                end_date=end_date,
-                options=TransactionsGetRequestOptions(offset=offset, count=500),
-            )
-        )
-        transactions = response.transactions
-        all_transactions.extend(transactions)
-        offset += len(transactions)
-        if offset >= response.total_transactions:
+        kwargs = {"access_token": access_token}
+        if cursor:
+            kwargs["cursor"] = cursor
+
+        response = client.transactions_sync(TransactionsSyncRequest(**kwargs))
+        all_transactions.extend(response.added)
+        cursor = response.next_cursor
+
+        if not response.has_more:
             break
 
+    cutoff = TWO_YEARS_AGO
     return [
         {
             "date": str(t.date),
             "amount": t.amount,
-            "description": t.merchant_name or t.name or "",
+            # name is more reliable than merchant_name in practice
+            "description": t.name or t.merchant_name or "",
         }
         for t in all_transactions
-        if t.amount > 0  # outflows in Plaid are positive amounts
+        if t.amount > 0 and t.date >= cutoff  # outflows only, within 24 months
     ]
