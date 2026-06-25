@@ -94,7 +94,7 @@ Exchanges Plaid `public_token` for an `access_token`. Stores access token server
 
 #### `POST /transactions/analyze`
 
-Fetches 24 months of transactions for the session and runs detection.
+Enqueues a background job to fetch and analyze transactions. Returns immediately with a `job_id`.
 
 **Request:**
 ```json
@@ -103,22 +103,42 @@ Fetches 24 months of transactions for the session and runs detection.
 
 **Response:**
 ```json
+{ "job_id": "uuid" }
+```
+
+---
+
+#### `GET /jobs/{job_id}`
+
+Poll for job status and results.
+
+**Response (pending):**
+```json
+{ "job_id": "uuid", "status": "pending | fetching | detecting | complete | error" }
+```
+
+**Response (complete):**
+```json
 {
-  "period": { "start": "YYYY-MM-DD", "end": "YYYY-MM-DD" },
-  "total_transactions_analyzed": 0,
-  "candidates": [
-    {
-      "description": "string",
-      "amount_range": [0.0, 0.0],
-      "typical_amount": 0.0,
-      "first_payment": "YYYY-MM-DD",
-      "last_payment": "YYYY-MM-DD",
-      "occurrences": 0,
-      "cadence": "monthly | irregular",
-      "confidence_score": 0.0,
-      "transactions": []
-    }
-  ]
+  "job_id": "uuid",
+  "status": "complete",
+  "result": {
+    "period": { "start": "YYYY-MM-DD", "end": "YYYY-MM-DD" },
+    "total_transactions_analyzed": 0,
+    "candidates": [
+      {
+        "description": "string",
+        "amount_range": [0.0, 0.0],
+        "typical_amount": 0.0,
+        "first_payment": "YYYY-MM-DD",
+        "last_payment": "YYYY-MM-DD",
+        "occurrences": 0,
+        "cadence": "monthly | irregular",
+        "confidence_score": 0.0,
+        "transactions": []
+      }
+    ]
+  }
 }
 ```
 
@@ -167,8 +187,8 @@ npm install react-plaid-link axios
 App
  └── ConnectBank      → Plaid Link button, calls /plaid/create-link-token on mount
       ↓ on success
-     Analyzing        → calls /transactions/analyze with session_id, shows spinner
-      ↓ on result
+     Analyzing        → POSTs /transactions/analyze → gets job_id → polls /jobs/{job_id}
+      ↓ on complete
      CandidateList    → renders list of RentCandidate objects
 ```
 
@@ -183,7 +203,9 @@ idle → connecting → analyzing → results | error
 - Use `react-plaid-link` (`usePlaidLink` hook)
 - Fetch link token from backend on component mount
 - On `onSuccess(public_token)` → POST to `/plaid/exchange-token` → store `session_id` in React state
-- Immediately trigger `/transactions/analyze` with `session_id`
+- POST to `/transactions/analyze` with `session_id` → receive `job_id`
+- Poll `GET /jobs/{job_id}` every 2 seconds until `status === "complete"` or `"error"`
+- Surface pipeline stage (`fetching` | `detecting`) in the UI during polling
 
 ---
 
@@ -193,12 +215,14 @@ idle → connecting → analyzing → results | error
 2. Plaid link token endpoint — verify Plaid credentials work
 3. Token exchange endpoint — complete Link flow end-to-end in sandbox
 4. Transaction fetch — pull raw transactions, log to verify data shape
-5. Detection service — implement and unit test against sandbox data
-6. Analyze endpoint — wire detection service to API
-7. Frontend scaffold — Vite + React, proxy config to backend
-8. Connect flow — Plaid Link integration
-9. Results display — CandidateList component
-10. End-to-end test in sandbox
+5. Job queue — in-memory job store, background task runner, `/jobs/{job_id}` polling endpoint
+6. Detection service — implement and unit test against sandbox data
+7. Analyze endpoint — enqueue background job, wire fetch + detection into pipeline stages
+8. Frontend scaffold — Vite + React, proxy config to backend
+9. Connect flow — Plaid Link integration
+10. Analyzing state — job polling with stage display
+11. Results display — CandidateList component
+12. End-to-end test in sandbox
 
 ---
 
