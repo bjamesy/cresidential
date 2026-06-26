@@ -91,51 +91,100 @@ The resulting report is stronger than a traditional reference, but it still cann
 
 ---
 
-# Trust Tiers
+# Trust Model
 
-The product is better understood as a tiered trust model rather than a binary verified/unverified system.
+The system should be understood as a **graduated trust model**, not a binary verified/unverified system.
 
-Verified landlord participation produces a report with weight proportional to how that history was sourced — analogous to how a bank loan carries more weight on a credit report than a private loan. A report backed by participating, accountable landlords is meaningfully stronger than one backed by tenant-selected references.
+Every verified lease contributes an independently corroborated piece of rental history.
 
-This means the product's value scales with landlord network adoption, not as an all-or-nothing proposition.
+A single verified lease consists of:
+
+* landlord-confirmed lease obligations
+* applicant-authorized bank transaction verification
+* a documented verification trail linking the two
+
+This is already a stronger signal than a traditional reference because it replaces an informal recommendation with structured, verifiable facts.
+
+The strength of the overall report is determined by two independent dimensions:
+
+* **Credibility** — how confidently each individual lease has been verified.
+* **Coverage** — how much of the tenant's rental history has been verified.
+
+Credibility is achieved through landlord verification and payment corroboration.
+
+Coverage increases as additional landlords participate.
+
+A report with one verified lease may have high credibility but limited coverage.
+
+A report with ten verified leases approaches a comprehensive rental history.
+
+These dimensions should remain visible to landlords rather than being collapsed into a single score.
 
 ---
 
-# Paths to Full Completeness
+# Paths Toward Greater Coverage
 
-Two paths could eventually solve the completeness problem:
+The current product intentionally accepts incomplete coverage.
 
-**Landlord network adoption**
-A sufficiently large and trusted network of participating landlords — property management companies, landlord associations, housing co-ops — creates a system where verified history has weight and omissions become conspicuous. This requires solving a cold start problem: early landlord adopters contribute data whose primary benefit flows to the tenant's next landlord, not themselves. The value proposition is access to better applicant signal from a shared infrastructure they all benefit from.
+The long-term opportunity is to increase the proportion of a tenant's rental history that can be independently verified.
 
-**Government mandate**
-A regulated lease registry — where landlords are required to register leases — would solve completeness by default. Tenant history becomes independently registered and cannot be selectively omitted. This is the ideal long-term architecture but requires policy advocacy and is years away at best.
+Possible paths include:
+
+## 1. Landlord Network Growth
+
+As more landlords and property management organizations participate, verified lease coverage naturally increases.
+
+This creates a network effect:
+
+* participating landlords contribute stronger signals for future applications
+* future landlords receive more complete reports
+* tenants accumulate portable rental history over time
+
+The challenge is solving the cold-start problem, since the primary beneficiary of a landlord's verification effort is often the tenant's next landlord.
+
+## 2. Property Management System Integrations
+
+Rather than relying on individual landlords, integrations with lease management platforms could allow lease information to be verified directly from operational systems.
+
+This reduces manual effort while improving consistency.
+
+## 3. Public or Regulatory Infrastructure
+
+If jurisdictions eventually adopt lease registration systems or standardized tenancy reporting, those records could become authoritative sources of lease history.
+
+Such infrastructure would significantly improve completeness but is outside the scope of the current product.
 
 ---
 
-# Resolution: The Product Is Scoped, Not Blocked
+# Resolution
 
-The project is not blocked by trust. The trust model is understood.
+The original vision was to create a portable, independently verified rental history.
 
-The full vision — a complete, independently verified rental history — requires either landlord network adoption or a government-mandated lease registry. Neither is available today.
+That vision remains valid.
 
-However, the product does not need completeness to be useful.
+However, complete rental history should be viewed as a long-term objective rather than an MVP requirement.
 
-> A single landlord verification, corroborated by Plaid transaction data, is already a stronger signal than a traditional reference letter.
+The MVP does not attempt to prove a tenant's entire rental history.
 
-The tenant's first landlord verification is the product. It establishes:
+Instead, it attempts to answer a narrower question:
 
-* a confirmed lease record (dates, rent, due day)
-* verified payment behavior against that record
-* landlord accountability on record
+> "Can this tenant provide stronger evidence for this verified tenancy than a traditional landlord reference?"
 
-This is meaningful to a prospective landlord even in the absence of a complete history. The product has real value today, and that value grows as landlord participation increases.
+The answer is yes.
+
+A single verified lease, corroborated by bank transaction data, is already a materially stronger application artifact than today's combination of reference letters, PDFs, and bank statements.
+
+The product therefore follows an incremental strategy:
+
+1. Build highly credible verification for individual leases.
+2. Increase historical coverage as more landlords participate.
+3. Move toward a portable, comprehensive rental history as the verification network grows.
 
 ---
 
 # Current Design Priorities
 
-1. Make a single landlord verification as credible and friction-free as possible
-2. Give participating landlords a reason to return as prospective landlords themselves
-3. Build toward network adoption from property management organizations, where one partnership equals many landlords
-4. Track regulatory developments in lease registry proposals as a long-term completeness path
+1. Make a single landlord verification as credible and friction-free as possible.
+2. Give participating landlords a reason to return as prospective landlords themselves.
+3. Build toward network adoption from property management organizations, where one partnership equals many landlords.
+4. Track regulatory developments in lease registry proposals as a long-term completeness path.
